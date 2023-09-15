@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body {
+    font-family: 'Arial, sans-serif';
+  }
+  .container {
+    display: flex;
+    height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  .image-container {
+    flex: 1;
+    border: 1px solid #ddd; 
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+  }
+  .image-container img {
+    max-width: 100%;
+    max-height: 100%;
+    border: 1px solid #ccc;
+  }
+  .controls {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .controls button {
+    padding: 10px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .controls label {
+    font-weight: bold;
+  }
+  .label {
+    margin-top: 20px;
+    font-size: 18px;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="image-container">
+    <img id="image" src="" alt="Loaded image" />
+  </div>
+  <div class="controls">
+    <label>
+      Load Data
+      <input type="file" id="file-input" accept="image/*" multiple onchange="loadData(event)" style="display: none;">
+    </label>
+    <button onclick="document.getElementById('file-input').click()">Choose Images</button>
+    <button onclick="annotate('norm')">Norm</button>
+    <button onclick="annotate('stage 1')">Stage 1</button>
+    <button onclick="annotate('stage 2')">Stage 2</button>
+    <button onclick="annotate('stage 3')">Stage 3</button>
+    <button onclick="nextImage()">Next</button>
+    <button onclick="previousImage()">Back</button>
+    <button onclick="downloadAnnotations()">Download</button>
+    <div class="label" id="label">No label</div>
+  </div>
+</div>
+
+<script>
+  let images = [];
+  let annotations = {};
+  let index = 0;
+
+  function loadData(event) {
+    images = [];
+    annotations = {};
+    index = 0;
+    
+    const files = event.target.files;
+    if(files.length === 0) return;
+
+    for(let i = 0; i < files.length; i++) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        images.push({ src: e.target.result, name: files[i].name });
+        if(i === files.length - 1) {
+          document.getElementById('image').src = images[index].src;
+        }
+      }
+      reader.readAsDataURL(files[i]);
+    }
+  }
+
+  function annotate(label) {
+    if(index < images.length && index >= 0) {
+      annotations[images[index].name] = label;
+      document.getElementById('label').textContent = label;
+    }
+  }
+
+  function nextImage() {
+    if(index < images.length - 1) {
+      index += 1;
+      document.getElementById('image').src = images[index].src;
+      updateLabel();
+    }
+  }
+
+  function previousImage() {
+    if(index > 0) {
+      index -= 1;
+      document.getElementById('image').src = images[index].src;
+      updateLabel();
+    }
+  }
+
+  function updateLabel() {
+    const label = annotations[images[index].name] || 'No label';
+    document.getElementById('label').textContent = label;
+  }
+
+  function downloadAnnotations() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(annotations, null, 2));
+    const dlAnchorElem = document.createElement('a');
+    dlAnchorElem.setAttribute("href",     dataStr     );
+    dlAnchorElem.setAttribute("download", "annotations.json");
+    dlAnchorElem.click();
+  }
+</script>
+</body>
+</html>
